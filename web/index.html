@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0d10" />
+<meta name="description" content="One dashboard for weather, news, calendar, markets, tasks and more." />
+<title>Dashboard</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="assets/icon-192.png" />
+<link rel="apple-touch-icon" href="assets/icon-192.png" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div id="ptr" class="ptr" aria-hidden="true"><div class="ptr-spinner"></div></div>
+
+  <header class="topbar" id="topbar">
+    <div class="topbar-inner">
+      <div class="greeting">
+        <h1 id="greetingText">Dashboard</h1>
+        <p id="greetingSub" class="muted"></p>
+      </div>
+      <div class="topbar-actions">
+        <button id="refreshBtn" class="icon-btn" aria-label="Refresh all cards" title="Refresh">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+        </button>
+        <button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9.4 4a7.4 7.4 0 0 0-.13-1.35l2.05-1.6-2-3.46-2.44 1a7.5 7.5 0 0 0-2.33-1.35L16.2 2h-4l-.36 2.24a7.5 7.5 0 0 0-2.33 1.35l-2.44-1-2 3.46 2.05 1.6a7.6 7.6 0 0 0 0 2.7l-2.05 1.6 2 3.46 2.44-1a7.5 7.5 0 0 0 2.33 1.35L12.2 22h4l.36-2.24a7.5 7.5 0 0 0 2.33-1.35l2.44 1 2-3.46-2.05-1.6c.08-.44.12-.89.12-1.35z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="statusStrip" class="status-strip" hidden></div>
+  </header>
+
+  <main id="grid" class="grid" aria-live="polite"></main>
+
+  <div id="emptyState" class="empty" hidden>
+    <h2>No cards yet</h2>
+    <p class="muted">Add weather, news, calendar, markets and more.</p>
+    <button class="btn primary" data-action="open-add">Add your first card</button>
+  </div>
+
+  <button id="addFab" class="fab" aria-label="Add a card" title="Add card">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+  </button>
+
+  <div id="sheetRoot"></div>
+  <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

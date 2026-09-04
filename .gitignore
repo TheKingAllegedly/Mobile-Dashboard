@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+.DS_Store
+
+# Android build output
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.keystore

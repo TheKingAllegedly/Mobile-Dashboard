@@ -1,0 +1,14 @@
+{
+  "name": "mobile-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A personal dashboard PWA plus an Android home-screen widget.",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/sources.test.mjs && node tests/app.test.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
+}
