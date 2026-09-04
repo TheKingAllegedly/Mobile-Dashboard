@@ -40,6 +40,33 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
+      - name: Check the dashboard was bundled into the APK
+        run: |
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          missing=0
+          for entry in \
+            assets/web/index.html \
+            assets/web/js/main.js \
+            assets/web/js/core/registry.js \
+            assets/web/css/app.css \
+            assets/web/manifest.webmanifest \
+            res/xml/dashboard_widget_info.xml
+          do
+            if unzip -l "$apk" | grep -q "$entry"; then
+              echo "found    $entry"
+            else
+              echo "MISSING  $entry"
+              missing=1
+            fi
+          done
+          sources=$(unzip -l "$apk" | grep -c 'assets/web/js/sources/')
+          echo "card sources bundled: $sources"
+          if [ "$sources" -lt 14 ]; then
+            echo "expected at least 14 card sources in the APK"
+            missing=1
+          fi
+          exit $missing
+
       - name: Name the APK after the commit
         run: |
           mkdir -p dist
