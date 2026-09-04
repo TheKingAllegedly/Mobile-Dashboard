@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dashboard</string>
+    <string name="widget_label">Dashboard</string>
+    <string name="widget_description">Weather, your next event and what is on your list.</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_never_updated">Tap to set up</string>
+    <string name="widget_open_to_set_up">Open the app to fill this in</string>
+    <string name="widget_tasks_prefix">%1$s open ·</string>
+    <string name="hosted_load_failed">That hosted dashboard would not load, so the built-in one is back.</string>
+</resources>

@@ -16,7 +16,14 @@ globalThis.CustomEvent = window.CustomEvent;
 globalThis.location = window.location;
 
 const published = [];
-window.DashboardHost = { publishWidgetData: json => published.push(JSON.parse(json)) };
+let hostedUrl = '';
+window.DashboardHost = {
+  publishWidgetData: json => published.push(JSON.parse(json)),
+  isAndroidHost: () => true,
+  getHomeUrl: () => hostedUrl,
+  setHomeUrl: url => { if (url && !url.startsWith('https://')) return false; hostedUrl = url; return true; },
+  refreshWidget: () => { published.push({ widgetRefreshRequested: true }); }
+};
 
 const nowIso = new Date().toISOString().slice(0, 13) + ':00';
 function today(o){ return new Date(Date.now()+o*864e5).toISOString().slice(0,10); }
@@ -83,6 +90,23 @@ check('widget payload carries a headline and task count', !!wp.headline && wp.ta
 d.getElementById('settingsBtn').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 await new Promise(r => setTimeout(r, 50));
 check('settings sheet opens', !!d.querySelector('.sheet'), d.querySelector('.sheet h2') ? d.querySelector('.sheet h2').textContent : '');
+
+const sheetText = d.querySelector('.sheet').textContent;
+check('android shell gets widget setup instead of the install prompt',
+  /On this phone/.test(sheetText) && /Widgets/.test(sheetText) && !/Install on this phone/.test(sheetText));
+
+const applyBtn = [...d.querySelectorAll('.sheet .btn')].find(b => b.textContent === 'Apply');
+const hostedField = [...d.querySelectorAll('.sheet input[type=url]')].pop();
+hostedField.value = 'http://insecure.test/';
+applyBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await new Promise(r => setTimeout(r, 30));
+check('a non-https hosted url is rejected', hostedUrl === '' && /https/i.test(d.querySelector('.toast')?.textContent || ''),
+  'toast: ' + (d.querySelector('.toast')?.textContent || 'none'));
+hostedField.value = 'https://levi.github.io/Mobile-Dashboard/';
+applyBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await new Promise(r => setTimeout(r, 30));
+check('an https hosted url is accepted', hostedUrl === 'https://levi.github.io/Mobile-Dashboard/', hostedUrl);
+
 d.querySelector('.scrim').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 await new Promise(r => setTimeout(r, 50));
 check('settings sheet closes', !d.querySelector('.sheet'));

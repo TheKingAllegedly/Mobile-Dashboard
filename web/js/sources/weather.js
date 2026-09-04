@@ -142,6 +142,9 @@ export default {
 
     return {
       place: place.label,
+      lat: place.lat,
+      lon: place.lon,
+      unitKey: imperial ? 'fahrenheit' : 'celsius',
       units: {
         temp: data.current_units ? data.current_units.temperature_2m : (imperial ? '°F' : '°C'),
         wind: data.current_units ? data.current_units.wind_speed_10m : (imperial ? 'mph' : 'km/h')
@@ -231,7 +234,12 @@ export default {
       weatherCond: cond.label,
       weatherIcon: cond.icon,
       weatherHiLo: today ? `H ${Math.round(today.hi)}°  L ${Math.round(today.lo)}°` : '',
-      weatherPlace: p.place
+      weatherPlace: p.place,
+      /* The Android widget re-fetches these coordinates on its own schedule,
+         so the temperature stays current while the app is closed. */
+      weatherLat: p.lat == null ? '' : String(p.lat),
+      weatherLon: p.lon == null ? '' : String(p.lon),
+      weatherUnit: p.unitKey || 'fahrenheit'
     };
   }
 };

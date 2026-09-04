@@ -274,6 +274,13 @@ function publishWidgetData() {
   }
 }
 
+/* True when the dashboard is running inside the Android app rather than a browser. */
+function isAndroidApp() {
+  const host = window.DashboardHost;
+  if (!host) return false;
+  try { return host.isAndroidHost() === true; } catch { return false; }
+}
+
 /* --------------------------------------------------------------- chrome */
 
 function wireChrome() {
@@ -513,22 +520,64 @@ function openSettings() {
   if (!getCards().length) manage.append(el('p', { class: 'muted', style: 'font-size:13.5px', text: 'No cards yet.' }));
   body.append(manage);
 
-  body.append(el('div', { class: 'section-label', text: 'Install' }));
-  const installRow = el('div', { class: 'btn-row' });
-  installRow.append(el('button', {
-    class: 'btn sm', text: '📲 Install on this phone',
-    onClick: async () => {
-      if (!installPrompt) {
-        toast('Use your browser menu → “Add to Home screen”');
-        return;
+  if (isAndroidApp()) {
+    body.append(el('div', { class: 'section-label', text: 'On this phone' }));
+    body.append(el('p', {
+      class: 'faint',
+      style: 'font-size:12px;margin:0 0 12px;line-height:1.45',
+      text: 'Long-press your home screen, choose Widgets, then drag the Dashboard widget out. '
+        + 'It shows the weather, your next event and your top task, and updates on its own in the background.'
+    }));
+
+    const widgetRow = el('div', { class: 'btn-row' });
+    widgetRow.append(el('button', {
+      class: 'btn sm', text: '🔄 Update the widget now',
+      onClick: () => {
+        publishWidgetData();
+        try { window.DashboardHost.refreshWidget(); } catch { /* older shell */ }
+        toast('Widget updated');
       }
-      installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      installPrompt = null;
-      toast(choice.outcome === 'accepted' ? 'Installing…' : 'Install dismissed');
-    }
-  }));
-  body.append(installRow);
+    }));
+    body.append(widgetRow);
+
+    let currentHosted = '';
+    try { currentHosted = window.DashboardHost.getHomeUrl() || ''; } catch { currentHosted = ''; }
+    const hostedInput = el('input', { type: 'url', placeholder: 'https://you.github.io/Mobile-Dashboard/' });
+    hostedInput.value = currentHosted;
+    body.append(el('label', { class: 'field' }, [
+      el('span', { text: 'Run a hosted copy instead' }),
+      hostedInput,
+      el('small', { text: 'Leave blank to use the copy built into the app. An https address lets you update the dashboard without reinstalling.' })
+    ]));
+    body.append(el('div', { class: 'btn-row' }, [
+      el('button', {
+        class: 'btn sm', text: 'Apply',
+        onClick: () => {
+          const value = hostedInput.value.trim();
+          let ok = false;
+          try { ok = window.DashboardHost.setHomeUrl(value); } catch { ok = false; }
+          if (!ok) toast('Only https addresses are allowed');
+        }
+      })
+    ]));
+  } else {
+    body.append(el('div', { class: 'section-label', text: 'Install' }));
+    const installRow = el('div', { class: 'btn-row' });
+    installRow.append(el('button', {
+      class: 'btn sm', text: '📲 Install on this phone',
+      onClick: async () => {
+        if (!installPrompt) {
+          toast('Use your browser menu → “Add to Home screen”');
+          return;
+        }
+        installPrompt.prompt();
+        const choice = await installPrompt.userChoice;
+        installPrompt = null;
+        toast(choice.outcome === 'accepted' ? 'Installing…' : 'Install dismissed');
+      }
+    }));
+    body.append(installRow);
+  }
 
   body.append(el('div', { class: 'section-label', text: 'Backup' }));
   const backupRow = el('div', { class: 'btn-row' });
