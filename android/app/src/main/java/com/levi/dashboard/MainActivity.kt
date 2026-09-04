@@ -53,7 +53,6 @@ class MainActivity : AppCompatActivity() {
         web.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = true
             setGeolocationEnabled(true)
             cacheMode = WebSettings.LOAD_DEFAULT
             useWideViewPort = true
