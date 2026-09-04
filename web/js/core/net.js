@@ -125,19 +125,21 @@ export function relativeTime(ts) {
   const diff = Date.now() - ts;
   const abs = Math.abs(diff);
   const future = diff < 0;
-  const units = [
-    [60000, 'm', 1000 * 60],
-    [3600000, 'h', 1000 * 60 * 60],
-    [86400000 * 7, 'd', 1000 * 60 * 60 * 24]
-  ];
-  if (abs < 60000) return future ? 'in a moment' : 'just now';
-  for (const [limit, suffix, size] of units) {
-    if (abs < limit * 60 || suffix === 'd') {
-      const n = Math.round(abs / size);
-      if (suffix !== 'd' || abs < 86400000 * 7) return future ? `in ${n}${suffix}` : `${n}${suffix} ago`;
-    }
-  }
-  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+  if (abs < 45000) return future ? 'in a moment' : 'just now';
+
+  const MINUTE = 60000;
+  const HOUR = 60 * MINUTE;
+  const DAY = 24 * HOUR;
+
+  let value;
+  let unit;
+  if (abs < HOUR) { value = Math.round(abs / MINUTE); unit = 'm'; }
+  else if (abs < DAY) { value = Math.round(abs / HOUR); unit = 'h'; }
+  else if (abs < 7 * DAY) { value = Math.round(abs / DAY); unit = 'd'; }
+  else return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+  return future ? `in ${value}${unit}` : `${value}${unit} ago`;
 }
 
 export function formatTime(d, opts = {}) {

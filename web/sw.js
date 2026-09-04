@@ -1,6 +1,7 @@
 /* Offline shell. App files are cached; live data always goes to the network
    and falls back to the last successful response. */
 const VERSION = 'dash-v3';
+const DATA_CACHE = VERSION + '-data';
 const SHELL = [
   './',
   './index.html',
@@ -40,7 +41,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      .then(keys => Promise.all(
+        keys.filter(k => k !== VERSION && k !== DATA_CACHE).map(k => caches.delete(k))
+      ))
       .then(() => self.clients.claim())
   );
 });
@@ -74,7 +77,7 @@ self.addEventListener('fetch', event => {
     fetch(request).then(response => {
       if (response && response.ok) {
         const copy = response.clone();
-        caches.open(VERSION + '-data').then(cache => cache.put(request, copy));
+        caches.open(DATA_CACHE).then(cache => cache.put(request, copy));
       }
       return response;
     }).catch(() => caches.match(request).then(hit => hit || Response.error()))
