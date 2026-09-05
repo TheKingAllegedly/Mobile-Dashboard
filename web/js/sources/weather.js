@@ -113,7 +113,11 @@ export default {
     const nowIso = data.current.time;
     const hourly = [];
     if (data.hourly && Array.isArray(data.hourly.time)) {
-      let start = data.hourly.time.findIndex(t => t >= nowIso);
+      /* Compare at hour resolution: current.time is reported to the quarter
+         hour, so a plain string compare against hourly stamps skips the hour
+         that is actually in progress. */
+      const nowHour = String(nowIso).slice(0, 13);
+      let start = data.hourly.time.findIndex(t => String(t).slice(0, 13) >= nowHour);
       if (start < 0) start = 0;
       for (let i = start; i < Math.min(start + 12, data.hourly.time.length); i++) {
         hourly.push({

@@ -92,8 +92,14 @@ class WidgetRefreshWorker(
 
         val out = mutableMapOf<String, String>()
         if (!temp.isNaN()) out["weatherTemp"] = "${temp.roundToInt()}$degrees"
-        out["weatherCond"] = describe(code)
-        out["weatherIcon"] = icon(code, isDay)
+
+        /* An unrecognised code yields an empty label. Merging that would wipe
+           the description the app published and leave the widget reading
+           "Open the app to fill this in" next to a perfectly good temperature. */
+        val condition = describe(code)
+        if (condition.isNotEmpty()) out["weatherCond"] = condition
+        val glyph = icon(code, isDay)
+        if (glyph.isNotEmpty()) out["weatherIcon"] = glyph
 
         json.optJSONObject("daily")?.let { daily ->
             val highs = daily.optJSONArray("temperature_2m_max")

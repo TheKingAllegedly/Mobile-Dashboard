@@ -124,10 +124,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         /**
-         * A hosted dashboard that will not load would otherwise leave the app
-         * stuck on an error page with no way back, so fall back to the copy
-         * bundled in the APK. If the bundled copy is what failed, say so in
-         * plain language rather than leaving the WebView's raw error showing.
+         * A dashboard that will not load would otherwise leave the app stuck
+         * on an error page with no way back.
+         *
+         * Which copy failed decides what to do, and the failing URL says which
+         * it was. A hosted one falls back to the bundled copy for this launch
+         * while keeping the address: being offline for a moment is not a
+         * reason to silently erase a setting the user typed in, and the
+         * bundled copy can clear it from Settings if they want. If the bundled
+         * copy is what failed, there is nowhere left to fall back to, so
+         * explain it instead of leaving the WebView's raw error showing.
          */
         override fun onReceivedError(
             view: WebView,
@@ -136,8 +142,7 @@ class MainActivity : AppCompatActivity() {
         ) {
             if (!request.isForMainFrame) return
 
-            if (WidgetStore.getHomeUrl(this@MainActivity).isNotEmpty()) {
-                WidgetStore.setHomeUrl(this@MainActivity, "")
+            if (request.url.host != ASSET_DOMAIN) {
                 Toast.makeText(
                     this@MainActivity,
                     R.string.hosted_load_failed,

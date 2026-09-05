@@ -52,11 +52,18 @@ export default {
     if (mode === 'repo') {
       const data = await getJSON(`https://api.github.com/repos/${repo}/commits?per_page=${limit}`, { headers });
       return {
-        items: (data || []).map(c => ({
-          title: (c.commit && c.commit.message ? c.commit.message : '').split('\n')[0] || '(no message)',
-          link: c.html_url,
-          meta: `${c.commit && c.commit.author ? c.commit.author.name : 'unknown'} · ${relativeTime(Date.parse(c.commit.author.date))}`
-        }))
+        /* A commit with no git author is rare but real (rewritten history,
+           some import tools), and dereferencing it fails the whole card. */
+        items: (data || []).map(c => {
+          const author = c.commit && c.commit.author ? c.commit.author : null;
+          const when = author && author.date ? Date.parse(author.date) : null;
+          return {
+            title: ((c.commit && c.commit.message) || '').split('\n')[0] || '(no message)',
+            link: c.html_url,
+            meta: [author && author.name ? author.name : 'unknown', relativeTime(when)]
+              .filter(Boolean).join(' · ')
+          };
+        })
       };
     }
 

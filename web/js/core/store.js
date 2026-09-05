@@ -71,6 +71,19 @@ export function setSettings(patch) {
   return cfg.settings;
 }
 
+/**
+ * The auto-refresh window in milliseconds.
+ *
+ * refreshMinutes is typed into a text field, so it can arrive blank, negative
+ * or absurd. Normalizing it in one place keeps the timer, the staleness dot
+ * and the focus handler from each inventing a different fallback.
+ */
+export function getRefreshWindowMs() {
+  const minutes = Number(getSettings().refreshMinutes);
+  if (!Number.isFinite(minutes) || minutes < 1) return 15 * 60000;
+  return Math.min(minutes, 240) * 60000;
+}
+
 export function getCards() { return loadConfig().cards; }
 export function getCard(id) { return loadConfig().cards.find(c => c.id === id) || null; }
 

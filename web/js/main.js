@@ -3,7 +3,7 @@
 import {
   loadConfig, getSettings, setSettings, getCards, getCard,
   addCard, updateCard, removeCard, moveCard,
-  getCached, setCached, exportAll, importAll
+  getCached, setCached, exportAll, importAll, getRefreshWindowMs
 } from './core/store.js';
 import { allSources, getSource, STARTER_CARDS } from './core/registry.js';
 import { el, clear, sheet, form, toast, skeleton, errorBox } from './core/ui.js';
@@ -49,9 +49,12 @@ function boot() {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     renderGreeting();
-    const stalest = Math.min(...[...cardState.values()].map(s => s.loadedAt || 0), Date.now());
-    const maxAge = Math.max(1, getSettings().refreshMinutes) * 60000;
-    if (Date.now() - stalest > maxAge) refreshAll({ silent: true });
+    /* Only cards that actually hold data can be stale. Including the ones
+       that never loaded pins this at zero, so a single permanently failing
+       card would refresh everything on every single focus. */
+    const loaded = [...cardState.values()].map(s => s.loadedAt).filter(Boolean);
+    const stalest = loaded.length ? Math.min(...loaded) : 0;
+    if (Date.now() - stalest > getRefreshWindowMs()) refreshAll({ silent: true });
   });
 
   window.addEventListener('beforeinstallprompt', e => {
@@ -160,6 +163,15 @@ function renderCard(card) {
     state.body.append(errorBox('Could not draw this card: ' + (e.message || e)));
   }
 
+  updateCardStatus(card);
+}
+
+/* The footer stamp and status dot, without touching the card body. */
+function updateCardStatus(card) {
+  const state = cardState.get(card.id);
+  const source = getSource(card.type);
+  if (!state || !source) return;
+
   const stamp = state.foot.querySelector('.stamp');
   if (source.local) stamp.textContent = 'On this device';
   else if (state.error) stamp.textContent = 'Last good: ' + (state.loadedAt ? relativeTime(state.loadedAt) : 'never');
@@ -170,8 +182,7 @@ function renderCard(card) {
 
 function isStale(state) {
   if (!state.loadedAt) return false;
-  const maxAge = Math.max(1, getSettings().refreshMinutes) * 60000;
-  return Date.now() - state.loadedAt > maxAge * 2.5;
+  return Date.now() - state.loadedAt > getRefreshWindowMs() * 2.5;
 }
 
 /* --------------------------------------------------------------- loading */
@@ -182,9 +193,12 @@ async function loadCard(card) {
   if (!source || !state) return;
 
   if (source.local) {
+    /* Local cards hold no fetched data, so a refresh has nothing to redraw.
+       Rebuilding them anyway destroys the Notes textarea and the Tasks input
+       mid-keystroke, taking focus and any not-yet-saved text with it. */
     state.error = null;
     state.loadedAt = Date.now();
-    renderCard(card);
+    updateCardStatus(card);
     return;
   }
 
@@ -240,8 +254,7 @@ function renderStatusStrip() {
 
 function scheduleRefresh() {
   clearInterval(refreshTimer);
-  const minutes = Math.max(1, getSettings().refreshMinutes || 15);
-  refreshTimer = setInterval(() => refreshAll({ silent: true }), minutes * 60000);
+  refreshTimer = setInterval(() => refreshAll({ silent: true }), getRefreshWindowMs());
 }
 
 /* ------------------------------------------------- Android widget bridge */
@@ -499,7 +512,7 @@ function openSettings() {
       { value: 'metric', label: 'Celsius, km/h, mm' }
     ] },
     { key: 'hour12', type: 'boolean', label: '12-hour clock' },
-    { key: 'refreshMinutes', type: 'number', label: 'Auto-refresh every (minutes)', min: 1, max: 240 },
+    { key: 'refreshMinutes', type: 'number', label: 'Auto-refresh every (minutes)', default: 15, min: 1, max: 240 },
     { key: 'proxy', label: 'CORS proxy', help: 'Feeds and calendars that block browsers are fetched through this. Leave blank to disable. Self-host the included Cloudflare Worker for privacy.' }
   ], s);
 

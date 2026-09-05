@@ -5,7 +5,7 @@
   "description": "A personal dashboard PWA plus an Android home-screen widget.",
   "type": "module",
   "scripts": {
-    "test": "node scripts/check-asset-paths.mjs && node tests/calendar.test.mjs && node tests/sources.test.mjs && node tests/app.test.mjs",
+    "test": "node scripts/check-asset-paths.mjs && node tests/calendar.test.mjs && node tests/regressions.test.mjs && node tests/sources.test.mjs && node tests/app.test.mjs",
     "serve": "node scripts/serve.mjs"
   },
   "devDependencies": {

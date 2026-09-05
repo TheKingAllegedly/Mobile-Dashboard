@@ -136,7 +136,28 @@ function expand(event, fromMs, toMs) {
   const hardStop = Math.min(toMs, fromMs + 400 * DAY);
   let emitted = 0;
   let cursor = new Date(startMs);
-  const guardMax = 2000;
+
+  /* Rules that step a day at a time would otherwise spend every iteration
+     walking history: a weekday standup started six years ago runs out of
+     steps before it reaches today and silently shows nothing. With no COUNT
+     the occurrences before the window are not needed, so jump straight to it
+     — by a whole number of intervals, so the alignment BYDAY and INTERVAL
+     depend on is preserved. */
+  if (count === null && startMs < fromMs) {
+    if (freq === 'DAILY') {
+      const stepMs = interval * DAY;
+      const skip = Math.floor((fromMs - startMs) / stepMs);
+      if (skip > 0) cursor = new Date(startMs + skip * stepMs);
+    } else if (freq === 'WEEKLY') {
+      const weeks = Math.floor((fromMs - startMs) / (7 * DAY));
+      const aligned = weeks - (weeks % interval);
+      if (aligned > 0) cursor = new Date(startMs + aligned * 7 * DAY);
+    }
+  }
+
+  /* COUNT still has to be counted from the first occurrence, so leave room
+     for a large one stepping daily. */
+  const guardMax = 20000;
 
   for (let step = 0; step < guardMax; step++) {
     const occMs = cursor.getTime();

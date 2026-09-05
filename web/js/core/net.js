@@ -131,14 +131,19 @@ export function relativeTime(ts) {
   const MINUTE = 60000;
   const HOUR = 60 * MINUTE;
   const DAY = 24 * HOUR;
+  const WEEK = 7 * DAY;
 
+  /* Truncate rather than round. Rounding lets a value spill into the unit
+     above it: 59.6 minutes becomes "60m", 23.7 hours becomes "24h", and
+     6.9 days becomes "7d" — each a quantity its own bucket cannot hold. */
   let value;
   let unit;
-  if (abs < HOUR) { value = Math.round(abs / MINUTE); unit = 'm'; }
-  else if (abs < DAY) { value = Math.round(abs / HOUR); unit = 'h'; }
-  else if (abs < 7 * DAY) { value = Math.round(abs / DAY); unit = 'd'; }
+  if (abs < HOUR) { value = Math.floor(abs / MINUTE); unit = 'm'; }
+  else if (abs < DAY) { value = Math.floor(abs / HOUR); unit = 'h'; }
+  else if (abs < WEEK) { value = Math.floor(abs / DAY); unit = 'd'; }
   else return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
+  if (value < 1) value = 1;   /* 45-59s reads as "1m", never "0m" */
   return future ? `in ${value}${unit}` : `${value}${unit} ago`;
 }
 

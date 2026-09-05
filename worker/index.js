@@ -78,14 +78,31 @@ export default {
       return problem(upstream.status, `Upstream returned ${upstream.status}.`);
     }
 
-    const length = parseInt(upstream.headers.get('Content-Length') || '0', 10);
-    if (length > MAX_BYTES) return problem(413, 'That response is too large.');
+    const declared = parseInt(upstream.headers.get('Content-Length') || '0', 10);
+    if (declared > MAX_BYTES) return problem(413, 'That response is too large.');
 
     const headers = corsHeaders();
     headers.set('Content-Type', upstream.headers.get('Content-Type') || 'text/plain; charset=utf-8');
     headers.set('Cache-Control', 'public, max-age=120');
 
-    return new Response(upstream.body, { status: 200, headers });
+    if (!upstream.body) return new Response(null, { status: 200, headers });
+
+    /* A chunked response carries no Content-Length, so the header check above
+       cannot see it at all. Count the bytes as they pass through and cut the
+       stream off at the limit rather than relaying it unbounded. */
+    let seen = 0;
+    const limit = new TransformStream({
+      transform(chunk, controller) {
+        seen += chunk.byteLength;
+        if (seen > MAX_BYTES) {
+          controller.error(new Error('Upstream response exceeded the size limit.'));
+          return;
+        }
+        controller.enqueue(chunk);
+      }
+    });
+
+    return new Response(upstream.body.pipeThrough(limit), { status: 200, headers });
   }
 };
 

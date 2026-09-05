@@ -1,7 +1,9 @@
 /* Offline shell. App files are cached; live data always goes to the network
    and falls back to the last successful response. */
 const VERSION = 'dash-v3';
-const DATA_CACHE = VERSION + '-data';
+/* Deliberately not tied to VERSION: the point of this cache is to outlive an
+   app update, and a versioned name puts it back in the activate sweep. */
+const DATA_CACHE = 'dash-data';
 const SHELL = [
   './',
   './index.html',

@@ -7,5 +7,5 @@
     <string name="widget_never_updated">Tap to set up</string>
     <string name="widget_open_to_set_up">Open the app to fill this in</string>
     <string name="widget_tasks_prefix">%1$s open ·</string>
-    <string name="hosted_load_failed">That hosted dashboard would not load, so the built-in one is back.</string>
+    <string name="hosted_load_failed">Could not reach your hosted dashboard, so the built-in one is showing. Your address is still saved.</string>
 </resources>
