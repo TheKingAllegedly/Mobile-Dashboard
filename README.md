@@ -38,6 +38,9 @@ The APK is built by GitHub Actions, so you never need Android Studio.
    manager or browser. Allow it, then install.
 4. Open **Dashboard** once so it can set itself up.
 
+If you are replacing an earlier build, install straight over it — your cards and
+settings are kept.
+
 To place the widget:
 
 1. Long-press an empty spot on your home screen.

@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
 
         assetLoader = WebViewAssetLoader.Builder()
             .setDomain(ASSET_DOMAIN)
-            .addPathHandler("/web/", WebViewAssetLoader.AssetsPathHandler(this))
+            .addPathHandler(ASSET_PREFIX, WebViewAssetLoader.AssetsPathHandler(this))
             .build()
 
         web = WebView(this)
@@ -126,7 +126,8 @@ class MainActivity : AppCompatActivity() {
         /**
          * A hosted dashboard that will not load would otherwise leave the app
          * stuck on an error page with no way back, so fall back to the copy
-         * bundled in the APK.
+         * bundled in the APK. If the bundled copy is what failed, say so in
+         * plain language rather than leaving the WebView's raw error showing.
          */
         override fun onReceivedError(
             view: WebView,
@@ -134,14 +135,25 @@ class MainActivity : AppCompatActivity() {
             error: WebResourceError
         ) {
             if (!request.isForMainFrame) return
-            if (WidgetStore.getHomeUrl(this@MainActivity).isEmpty()) return
-            WidgetStore.setHomeUrl(this@MainActivity, "")
-            Toast.makeText(
-                this@MainActivity,
-                R.string.hosted_load_failed,
-                Toast.LENGTH_LONG
-            ).show()
-            view.loadUrl(BUNDLED_URL)
+
+            if (WidgetStore.getHomeUrl(this@MainActivity).isNotEmpty()) {
+                WidgetStore.setHomeUrl(this@MainActivity, "")
+                Toast.makeText(
+                    this@MainActivity,
+                    R.string.hosted_load_failed,
+                    Toast.LENGTH_LONG
+                ).show()
+                view.loadUrl(BUNDLED_URL)
+                return
+            }
+
+            view.loadDataWithBaseURL(
+                null,
+                bundledFailurePage(request.url.toString(), error.description?.toString()),
+                "text/html",
+                "utf-8",
+                null
+            )
         }
 
         private fun isDashboardUrl(url: Uri): Boolean {
@@ -194,9 +206,53 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    /**
+     * Shown when the dashboard bundled in the APK will not load. That means the
+     * asset path and the URL have drifted apart, so name both: it is the only
+     * thing that makes the failure diagnosable from the phone.
+     */
+    private fun bundledFailurePage(url: String, reason: String?): String {
+        val body = """
+            <!doctype html>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body { margin:0; padding:32px 24px; background:#0b0d10; color:#e8ecf1;
+                     font:16px/1.5 system-ui, sans-serif; }
+              h1 { font-size:20px; margin:0 0 12px; }
+              p { color:#9aa5b1; margin:0 0 14px; }
+              code { display:block; background:#14181d; border:1px solid #262c35;
+                     border-radius:10px; padding:10px 12px; margin-top:6px;
+                     font-size:12.5px; color:#5aa9ff; word-break:break-all; }
+            </style>
+            <h1>The dashboard could not start</h1>
+            <p>The copy built into this app did not load, which usually means the
+               bundled files moved without the address being updated.</p>
+            <p>Address<code>${escapeHtml(url)}</code></p>
+            <p>Reason<code>${escapeHtml(reason ?: "unknown")}</code></p>
+            <p>Expected the files under <code>assets/web/</code> in the APK,
+               reached through the <code>${escapeHtml(ASSET_PREFIX)}</code> handler.</p>
+        """
+        return body.trimIndent()
+    }
+
+    private fun escapeHtml(value: String): String = value
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+
     companion object {
         const val ASSET_DOMAIN = "appassets.androidplatform.net"
-        const val BUNDLED_URL = "https://$ASSET_DOMAIN/web/index.html"
+
+        /*
+         * WebViewAssetLoader strips this prefix from the URL and opens what is
+         * left relative to assets/. The dashboard is copied into assets/web/ by
+         * the copyWebApp Gradle task, so the URL has to carry both segments:
+         * "/assets/" is removed, leaving "web/index.html".
+         * scripts/check-asset-paths.mjs enforces that this still lines up.
+         */
+        const val ASSET_PREFIX = "/assets/"
+        const val BUNDLED_URL = "https://$ASSET_DOMAIN${ASSET_PREFIX}web/index.html"
         const val EXTRA_REFRESH = "refresh"
         private const val REQUEST_LOCATION = 42
     }

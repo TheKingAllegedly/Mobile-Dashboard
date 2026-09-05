@@ -662,7 +662,15 @@ function showText(title, text) {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.protocol !== 'file:') return;
+
+  /* Inside the Android app the dashboard is served by WebViewAssetLoader.
+     A service worker's own requests bypass the WebView's request interceptor
+     and go to the network instead, so every fetch it made would fail — and once
+     installed it would control the page. Skip it there: the files are already
+     on the device, and card data is cached in localStorage either way. */
+  if (location.hostname === 'appassets.androidplatform.net') return;
+
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
   navigator.serviceWorker.register('sw.js').catch(e => console.warn('service worker failed', e));
 }
 
